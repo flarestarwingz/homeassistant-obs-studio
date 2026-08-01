@@ -12,10 +12,24 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, EVENT_REFRESH_COOLDOWN, HEARTBEAT_INTERVAL, PLATFORMS
+from .const import (
+    DEFAULT_DEVICE_NAME,
+    DOMAIN,
+    EVENT_REFRESH_COOLDOWN,
+    HEARTBEAT_INTERVAL,
+    OPTION_DEVICE_NAME,
+    PLATFORMS,
+)
+
+
+def get_device_name(entry: ConfigEntry) -> str:
+    """Return the configured friendly device name."""
+    return str(entry.options.get(OPTION_DEVICE_NAME, DEFAULT_DEVICE_NAME))
+
 
 
 @dataclass
@@ -27,8 +41,6 @@ class OBSRuntimeData:
 
 
 type OBSConfigEntry = ConfigEntry[OBSRuntimeData]
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class OBSConnection:
@@ -70,10 +82,24 @@ class OBSConnection:
                 def on_stream_state_changed(self_: Any, data: Any) -> None:
                     conn._on_event()
 
-            events = _Events(**conn._get_kwargs())
-            # obsws-python only dispatches events to functions registered via callback.register()
-            events.callback.register(events.on_stream_state_changed)
-            conn._event_client = events
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.debounce import Debouncer
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from .const import (
+    DEFAULT_DEVICE_NAME,
+    DOMAIN,
+    EVENT_REFRESH_COOLDOWN,
+    HEARTBEAT_INTERVAL,
+    OPTION_DEVICE_NAME,
+    PLATFORMS,
+)
+
+
+def get_device_name(entry: ConfigEntry) -> str:
+    """Return the configured friendly device name."""
+    return str(entry.options.get(OPTION_DEVICE_NAME, DEFAULT_DEVICE_NAME))
+
 
         await self.hass.async_add_executor_job(_connect)
 
@@ -92,7 +118,64 @@ class OBSConnection:
         def _fetch() -> dict[str, Any]:
             status = self._req_client.get_stream_status()
             service = self._req_client.get_stream_service_settings()
-            return {"stream_status": status, "service_settings": service}
+
+            current_scene: str | None = None
+            scene_list: list[str] = []
+            scene_items: dict[str, list[dict[str, Any]]] = {}
+            try:
+                current_scene_resp = self._req_client.get_current_program_scene()
+                current_scene = current_scene_resp.scene_name if current_scene_resp else None
+
+                scene_list_resp = self._req_client.get_scene_list()
+                scenes = list(scene_list_resp.scenes) if scene_list_resp else []
+                scene_list = [
+                    s["sceneName"] if isinstance(s, dict) else s.scene_name
+                    for s in scenes
+                ]
+
+                for scene in scenes:
+                    name = scene["sceneName"] if isinstance(scene, dict) else scene.scene_name
+                    try:
+                        items_resp = self._req_client.get_scene_item_list(name)
+                        raw_items = list(items_resp.scene_items) if items_resp else []
+                        scene_items[name] = [
+                            {
+                                "id": i["sceneItemId"] if isinstance(i, dict) else i.scene_item_id,
+                                "name": i["sourceName"] if isinstance(i, dict) else i.source_name,
+                                "enabled": i["sceneItemEnabled"] if isinstance(i, dict) else i.scene_item_enabled,
+                                "type": i["sourceType"] if isinstance(i, dict) else getattr(i, "source_type", None),
+                                "is_group": i["isGroup"] if isinstance(i, dict) else getattr(i, "is_group", None),
+                            }
+                            for i in raw_items
+                        ]
+                    except Exception:
+                        scene_items[name] = []
+            except Exception:
+                _LOGGER.debug("Failed to fetch OBS scene data", exc_info=True)
+
+            recording = False
+            try:
+                record_resp = self._req_client.get_record_status()
+                recording = record_resp.output_active if record_resp else False
+            except Exception:
+                _LOGGER.debug("Failed to fetch OBS record status", exc_info=True)
+
+            virtual_cam_active = False
+            try:
+                vcam_resp = self._req_client.get_virtual_cam_status()
+                virtual_cam_active = vcam_resp.output_active if vcam_resp else False
+            except Exception:
+                _LOGGER.debug("Failed to fetch OBS virtual cam status", exc_info=True)
+
+            return {
+                "stream_status": status,
+                "service_settings": service,
+                "current_program_scene": current_scene,
+                "scene_list": scene_list,
+                "scene_items": scene_items,
+                "recording": recording,
+                "virtual_cam_active": virtual_cam_active,
+            }
 
         return await self.hass.async_add_executor_job(_fetch)
 
@@ -103,6 +186,24 @@ class OBSConnection:
     async def async_stop_stream(self) -> None:
         """Stop streaming in OBS."""
         await self.hass.async_add_executor_job(self._req_client.stop_stream)
+
+    async def async_set_current_program_scene(self, scene_name: str) -> None:
+        """Switch to the given scene."""
+        await self.hass.async_add_executor_job(self._req_client.set_current_program_scene, scene_name)
+
+    async def async_set_scene_item_enabled(self, scene_name: str, item_id: int, enabled: bool) -> None:
+        """Enable or disable a scene item."""
+        await self.hass.async_add_executor_job(
+            self._req_client.set_scene_item_enabled, scene_name, item_id, enabled
+        )
+
+    async def async_toggle_record(self) -> None:
+        """Toggle recording."""
+        await self.hass.async_add_executor_job(self._req_client.toggle_record)
+
+    async def async_toggle_virtual_cam(self) -> None:
+        """Toggle virtual camera."""
+        await self.hass.async_add_executor_job(self._req_client.toggle_virtual_cam)
 
     async def async_disconnect(self) -> None:
         """Disconnect both clients."""
@@ -193,8 +294,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: OBSConfigEntry) -> bool:
         coordinator=coordinator,
     )
 
+    _migrate_device_name(hass, entry)
+
+    entry.async_on_unload(entry.add_update_listener(async_options_updated))
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
+
+
+def _migrate_device_name(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Rename devices created before the configurable device name existed.
+
+    Only corrects names that still match the legacy "OBS Studio (host)" default
+    so user-customized device names are never overwritten.
+    """
+    dev_reg = dr.async_get(hass)
+    device = dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    if device is None or device.name == get_device_name(entry):
+        return
+    if device.name is None or device.name.startswith("OBS Studio ("):
+        dev_reg.async_update_device(device.id, name=get_device_name(entry))
+
+
+async def async_options_updated(hass: HomeAssistant, entry: OBSConfigEntry) -> None:
+    """Reload the integration when options are changed."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: OBSConfigEntry) -> bool:

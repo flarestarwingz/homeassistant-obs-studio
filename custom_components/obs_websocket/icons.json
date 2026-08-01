@@ -11,6 +11,20 @@
       },
       "stream_service": {
         "default": "mdi:cog-play"
+      },
+      "recording": {
+        "default": "mdi:record-rec",
+        "state": {
+          "recording": "mdi:record-rec",
+          "idle": "mdi:stop-circle-outline"
+        }
+      },
+      "virtual_cam": {
+        "default": "mdi:camera",
+        "state": {
+          "active": "mdi:video",
+          "idle": "mdi:video-off"
+        }
       }
     },
     "button": {
@@ -19,6 +33,17 @@
       },
       "stop_stream": {
         "default": "mdi:stop"
+      },
+      "toggle_record": {
+        "default": "mdi:record-rec"
+      },
+      "toggle_virtual_cam": {
+        "default": "mdi:camera"
+      }
+    },
+    "select": {
+      "scene": {
+        "default": "mdi:eye-arrow-right"
       }
     }
   }

@@ -12,7 +12,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import OBSConfigEntry, OBSCoordinator
+from . import get_device_name, OBSConfigEntry, OBSCoordinator
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,6 +30,8 @@ async def async_setup_entry(  # NOSONAR
         [
             OBSStreamStatusSensor(coordinator, entry),
             OBSStreamServiceSensor(coordinator, entry),
+            OBSRecordingSensor(coordinator, entry),
+            OBSVirtualCamSensor(coordinator, entry),
         ]
     )
 
@@ -44,7 +46,7 @@ class OBSSensorBase(CoordinatorEntity[OBSCoordinator], SensorEntity):
         super().__init__(coordinator)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
-            name=f"OBS Studio ({entry.data['host']})",
+            name=get_device_name(entry),
             manufacturer="OBS Project",
             sw_version=None,
         )
@@ -53,6 +55,7 @@ class OBSSensorBase(CoordinatorEntity[OBSCoordinator], SensorEntity):
 class OBSStreamStatusSensor(OBSSensorBase):
     """Sensor showing OBS stream status."""
 
+    _attr_name = "Stream status"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options: ClassVar[list[str]] = ["idle", "streaming", "reconnecting"]
     _attr_translation_key = "stream_status"
@@ -93,6 +96,7 @@ class OBSStreamStatusSensor(OBSSensorBase):
 class OBSStreamServiceSensor(OBSSensorBase):
     """Sensor showing OBS stream service configuration."""
 
+    _attr_name = "Stream service"
     _attr_translation_key = "stream_service"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_entity_registry_enabled_default = False
@@ -118,3 +122,45 @@ class OBSStreamServiceSensor(OBSSensorBase):
         svc = self.coordinator.data["service_settings"]
         settings = getattr(svc, "stream_service_settings", {})
         return {"stream_service_settings": settings}
+
+
+class OBSRecordingSensor(OBSSensorBase):
+    """Sensor showing OBS recording status."""
+
+    _attr_name = "Recording"
+    _attr_translation_key = "recording"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options: ClassVar[list[str]] = ["recording", "idle"]
+
+    def __init__(self, coordinator: OBSCoordinator, entry: OBSConfigEntry) -> None:
+        """Initialize."""
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_recording"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the recording state."""
+        if self.coordinator.data is None:
+            return None
+        return "recording" if self.coordinator.data.get("recording") else "idle"
+
+
+class OBSVirtualCamSensor(OBSSensorBase):
+    """Sensor showing OBS virtual camera status."""
+
+    _attr_name = "Virtual camera"
+    _attr_translation_key = "virtual_cam"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options: ClassVar[list[str]] = ["active", "idle"]
+
+    def __init__(self, coordinator: OBSCoordinator, entry: OBSConfigEntry) -> None:
+        """Initialize."""
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_virtual_cam"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the virtual camera state."""
+        if self.coordinator.data is None:
+            return None
+        return "active" if self.coordinator.data.get("virtual_cam_active") else "idle"
