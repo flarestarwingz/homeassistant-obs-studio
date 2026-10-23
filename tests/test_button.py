@@ -22,8 +22,8 @@ from .conftest import (
     make_stream_status,
 )
 
-START_ENTITY_ID = "button.obs_studio_192_168_1_100"
-STOP_ENTITY_ID = "button.obs_studio_192_168_1_100_2"
+START_ENTITY_ID = "button.obs_studio_start_stream"
+STOP_ENTITY_ID = "button.obs_studio_stop_stream"
 
 
 def _make_mock_obs(req_client: MagicMock) -> MagicMock:
@@ -189,4 +189,4 @@ async def test_button_device_info(hass: HomeAssistant) -> None:
     ent = er.async_get(hass).async_get(START_ENTITY_ID)
     devices = dr.async_entries_for_config_entry(dev_registry, ent.config_entry_id)
     assert len(devices) >= 1
-    assert MOCK_HOST in devices[0].name
+    assert devices[0].name == "OBS Studio"

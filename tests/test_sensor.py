@@ -22,8 +22,8 @@ from .conftest import (
     make_stream_status,
 )
 
-SERVICE_ENTITY_ID = "sensor.obs_studio_192_168_1_100_2"
-STATUS_ENTITY_ID = "sensor.obs_studio_192_168_1_100"
+SERVICE_ENTITY_ID = "sensor.obs_studio_stream_service"
+STATUS_ENTITY_ID = "sensor.obs_studio_stream_status"
 
 
 def _make_mock_obs(req_client: MagicMock) -> MagicMock:
@@ -146,7 +146,7 @@ async def test_stream_service_sensor(hass: HomeAssistant) -> None:
     sensor = OBSStreamServiceSensor(coordinator, entry)
 
     assert sensor.native_value == "rtmp_common"
-    assert sensor.extra_state_attributes == {"stream_service_settings": settings}
+    assert sensor.extra_state_attributes == {}
 
 
 async def test_service_sensor_disabled_by_default(hass: HomeAssistant) -> None:

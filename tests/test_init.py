@@ -331,14 +331,31 @@ async def test_stream_state_changed_callback_is_registered(hass: HomeAssistant) 
 
         connection = entry.runtime_data.connection
         register = connection._event_client.callback.register
-        register.assert_called_once()
-        callback = register.call_args.args[0]
-        assert callback.__name__ == "on_stream_state_changed"
+        assert register.call_count == 8
+        callback_names = {
+            call.args[0].__name__
+            for call in register.call_args_list
+        }
+        assert callback_names == {
+            "on_stream_state_changed",
+            "on_current_program_scene_changed",
+            "on_scene_item_enable_state_changed",
+            "on_scene_item_created",
+            "on_scene_item_removed",
+            "on_scene_list_changed",
+            "on_record_state_changed",
+            "on_virtualcam_state_changed",
+        }
+
+        stream_callback = next(
+            call.args[0]
+            for call in register.call_args_list
+            if call.args[0].__name__ == "on_stream_state_changed"
+        )
 
         with patch.object(connection, "_on_event") as on_event:
-            callback({})
-
-        on_event.assert_called_once_with()
+            stream_callback({})
+            on_event.assert_called_once_with()
 
 
 async def test_on_event_requests_debounced_refresh(hass: HomeAssistant) -> None:

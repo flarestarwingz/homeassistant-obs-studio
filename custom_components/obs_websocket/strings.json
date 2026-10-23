@@ -47,6 +47,34 @@
       "reconfigure_successful": "Reconfiguration was successful"
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "OBS WebSocket Options",
+        "description": "Customize how this OBS instance is displayed and which entities are created.",
+        "data": {
+          "device_name": "Device name",
+          "scene_item_mode": "Scene item switches",
+          "scene_item_scenes": "Scenes to include",
+          "include_scene_sources": "Include nested scenes"
+        },
+        "data_description": {
+          "device_name": "Friendly name shown for this OBS instance and its entities",
+          "scene_item_mode": "Sources: one stable switch per source, controlling its visibility in the active scene. All: one switch per scene item. Entities are created once and never removed.",
+          "scene_item_scenes": "Only create scene item switches for the selected scenes. Leave empty to include all scenes.",
+          "include_scene_sources": "Include scene items that are themselves scenes (nested scenes) or groups. Disable to only expose individual inputs."
+        }
+      }
+    }
+  },
+  "selector": {
+    "scene_item_mode": {
+      "options": {
+        "sources": "One switch per source (active scene)",
+        "all": "One switch per scene item"
+      }
+    }
+  },
   "exceptions": {
     "connection_failed": {
       "message": "Cannot connect to OBS WebSocket at {host}: {error}"
@@ -59,6 +87,18 @@
     },
     "stop_stream_failed": {
       "message": "Failed to stop streaming on OBS at {host}: {error}"
+    },
+    "set_scene_failed": {
+      "message": "Failed to switch to scene '{scene}' on OBS at {host}: {error}"
+    },
+    "scene_item_toggle_failed": {
+      "message": "Failed to toggle scene item '{source}' in scene '{scene}' on OBS at {host}: {error}"
+    },
+    "toggle_record_failed": {
+      "message": "Failed to toggle recording on OBS at {host}: {error}"
+    },
+    "toggle_virtual_cam_failed": {
+      "message": "Failed to toggle virtual camera on OBS at {host}: {error}"
     }
   },
   "entity": {
@@ -73,6 +113,20 @@
       },
       "stream_service": {
         "name": "Stream service"
+      },
+      "recording": {
+        "name": "Recording",
+        "state": {
+          "recording": "Recording",
+          "idle": "Idle"
+        }
+      },
+      "virtual_cam": {
+        "name": "Virtual camera",
+        "state": {
+          "active": "Active",
+          "idle": "Idle"
+        }
       }
     },
     "button": {
@@ -81,6 +135,17 @@
       },
       "stop_stream": {
         "name": "Stop stream"
+      },
+      "toggle_record": {
+        "name": "Toggle recording"
+      },
+      "toggle_virtual_cam": {
+        "name": "Toggle virtual camera"
+      }
+    },
+    "select": {
+      "scene": {
+        "name": "Scene"
       }
     }
   }

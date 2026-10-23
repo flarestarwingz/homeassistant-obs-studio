@@ -35,7 +35,8 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: OBSConf
         if service_settings:
             coordinator_data["service_settings"] = {
                 "stream_service_type": getattr(service_settings, "stream_service_type", None),
-                "stream_service_settings": getattr(service_settings, "stream_service_settings", {}),
+                # Never serialize arbitrary OBS service settings: credentials
+                # may be present under provider-specific or nested keys.
             }
 
     return async_redact_data(
