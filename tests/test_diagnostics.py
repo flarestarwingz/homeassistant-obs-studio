@@ -73,10 +73,10 @@ async def test_diagnostics(hass: HomeAssistant) -> None:
     assert result["coordinator"]["last_update_success"] is True
     assert result["coordinator"]["data"]["stream_status"]["output_active"] is True
 
-    # Stream key should be redacted
-    service_settings = result["coordinator"]["data"]["service_settings"]["stream_service_settings"]
-    assert service_settings["key"] == "**REDACTED**"
-    assert service_settings["server"] == "rtmp://live.twitch.tv/app"
+    # Service settings are omitted altogether to prevent unknown secret fields leaking.
+    service_data = result["coordinator"]["data"]["service_settings"]
+    assert service_data == {"stream_service_type": "rtmp_common"}
+    assert "live_abc123" not in str(result)
 
 
 async def test_diagnostics_no_data(hass: HomeAssistant) -> None:

@@ -105,7 +105,7 @@ Reports the configured streaming service. State is the service type (e.g. `rtmp_
 
 | Attribute | Description |
 |-----------|-------------|
-| `stream_service_settings` | Dict containing `server`, `key`, and other service-specific fields |
+| *(none)* | Service settings are intentionally omitted because OBS responses may contain stream keys and other credentials. |
 
 #### Recording
 
@@ -216,7 +216,11 @@ The integration maintains a persistent WebSocket connection to OBS with two upda
 - **Event-driven (primary):** The `EventClient` listens for OBS events (stream/record/virtual cam state changes, scene changes, scene item enable/disable, scene list changes) and triggers an immediate refresh.
 - **Heartbeat poll (fallback):** A `DataUpdateCoordinator` polls OBS every **60 seconds** to sync state in case an event is missed or the connection was briefly interrupted.
 
-If the connection to OBS drops, entities are marked **unavailable** and the coordinator reconnects on the next poll cycle. Stream, recording, and virtual camera state degrades gracefully — a failure in one area does not take down the other entities.
+If the connection to OBS drops, entities are marked **unavailable** and the coordinator reconnects on the next poll cycle. If an individual recording or virtual-camera status query fails, that sensor reports `unknown` rather than incorrectly claiming the output is idle. Other available functionality can continue updating.
+
+**Security:** The stream-service sensor reports only the service type, never the raw OBS service settings. Downloaded diagnostics likewise omit service settings entirely. OBS WebSocket passwords are redacted in diagnostics. Treat Home Assistant backups and historical recordings of older sensor attributes as sensitive if the previous version was used with this diagnostic entity enabled.
+
+**Performance and scene inventory:** Each refresh currently enumerates scene items for every scene (including the 60-second reconciliation poll). On large OBS configurations this can generate many requests. New or removed scene-item switches require an integration reload; switches for recreated items in `all` mode can re-resolve uniquely named items, but duplicate names need manual review.
 
 ## Automation Examples
 

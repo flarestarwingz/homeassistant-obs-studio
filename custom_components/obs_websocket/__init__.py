@@ -171,17 +171,17 @@ class OBSConnection:
             except Exception:
                 _LOGGER.debug("Failed to fetch OBS scene data", exc_info=True)
 
-            recording = False
+            recording: bool | None = None
             try:
                 record_resp = self._req_client.get_record_status()
-                recording = record_resp.output_active if record_resp else False
+                recording = record_resp.output_active if record_resp else None
             except Exception:
                 _LOGGER.debug("Failed to fetch OBS record status", exc_info=True)
 
-            virtual_cam_active = False
+            virtual_cam_active: bool | None = None
             try:
                 vcam_resp = self._req_client.get_virtual_cam_status()
-                virtual_cam_active = vcam_resp.output_active if vcam_resp else False
+                virtual_cam_active = vcam_resp.output_active if vcam_resp else None
             except Exception:
                 _LOGGER.debug("Failed to fetch OBS virtual cam status", exc_info=True)
 
@@ -327,7 +327,7 @@ def _migrate_device_name(hass: HomeAssistant, entry: ConfigEntry) -> None:
     so user-customized device names are never overwritten.
     """
     dev_reg = dr.async_get(hass)
-    device = dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    device = dev_reg.async_get_device_by_identifier((DOMAIN, entry.entry_id), entry.entry_id)
     if device is None or device.name == get_device_name(entry):
         return
     if device.name is None or device.name.startswith("OBS Studio ("):

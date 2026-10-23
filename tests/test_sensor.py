@@ -146,7 +146,7 @@ async def test_stream_service_sensor(hass: HomeAssistant) -> None:
     sensor = OBSStreamServiceSensor(coordinator, entry)
 
     assert sensor.native_value == "rtmp_common"
-    assert sensor.extra_state_attributes == {"stream_service_settings": settings}
+    assert sensor.extra_state_attributes == {}
 
 
 async def test_service_sensor_disabled_by_default(hass: HomeAssistant) -> None:

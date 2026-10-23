@@ -119,9 +119,9 @@ class OBSStreamServiceSensor(OBSSensorBase):
         """Return stream service settings."""
         if self.coordinator.data is None:
             return {}
-        svc = self.coordinator.data["service_settings"]
-        settings = getattr(svc, "stream_service_settings", {})
-        return {"stream_service_settings": settings}
+        # Service settings can contain streaming credentials, even when this
+        # diagnostic entity is disabled. Never export them as HA state attributes.
+        return {}
 
 
 class OBSRecordingSensor(OBSSensorBase):
@@ -142,7 +142,10 @@ class OBSRecordingSensor(OBSSensorBase):
         """Return the recording state."""
         if self.coordinator.data is None:
             return None
-        return "recording" if self.coordinator.data.get("recording") else "idle"
+        recording = self.coordinator.data.get("recording")
+        if recording is None:
+            return None
+        return "recording" if recording else "idle"
 
 
 class OBSVirtualCamSensor(OBSSensorBase):
@@ -163,4 +166,7 @@ class OBSVirtualCamSensor(OBSSensorBase):
         """Return the virtual camera state."""
         if self.coordinator.data is None:
             return None
-        return "active" if self.coordinator.data.get("virtual_cam_active") else "idle"
+        active = self.coordinator.data.get("virtual_cam_active")
+        if active is None:
+            return None
+        return "active" if active else "idle"

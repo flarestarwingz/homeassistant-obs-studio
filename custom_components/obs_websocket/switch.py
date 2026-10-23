@@ -127,11 +127,19 @@ class OBSSceneItemSwitch(CoordinatorEntity[OBSCoordinator], SwitchEntity):
 
     def _resolve(self) -> tuple[str, int] | None:
         """Return (scene_name, item_id) for this switch, if available."""
-        if self._fixed_scene is not None and self._fixed_item_id is not None:
-            return self._fixed_scene, self._fixed_item_id
-
         if self.coordinator.data is None:
             return None
+        if self._fixed_scene is not None and self._fixed_item_id is not None:
+            items = self.coordinator.data.get("scene_items", {}).get(self._fixed_scene, [])
+            for item in items:
+                if item["id"] == self._fixed_item_id and item["name"] == self._source_name:
+                    return self._fixed_scene, item["id"]
+            # A source may have been recreated with another OBS scene-item ID.
+            matches = [item for item in items if item["name"] == self._source_name]
+            if len(matches) == 1:
+                return self._fixed_scene, matches[0]["id"]
+            return None
+
         scene = self.coordinator.data.get("current_program_scene")
         items = self.coordinator.data.get("scene_items", {}).get(scene, [])
         for item in items:
