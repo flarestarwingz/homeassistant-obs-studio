@@ -11,7 +11,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import get_device_name, OBSConfigEntry, OBSCoordinator
+from . import OBSConfigEntry, OBSCoordinator, get_device_name
 from .const import (
     DEFAULT_INCLUDE_SCENE_SOURCES,
     DEFAULT_SCENE_ITEM_MODE,
@@ -40,16 +40,12 @@ async def async_setup_entry(
     coordinator = entry.runtime_data.coordinator
     mode = entry.options.get(OPTION_SCENE_ITEM_MODE, DEFAULT_SCENE_ITEM_MODE)
     selected_scenes = entry.options.get(OPTION_SCENE_ITEM_SCENES, [])
-    include_scene_sources = entry.options.get(
-        OPTION_INCLUDE_SCENE_SOURCES, DEFAULT_INCLUDE_SCENE_SOURCES
-    )
+    include_scene_sources = entry.options.get(OPTION_INCLUDE_SCENE_SOURCES, DEFAULT_INCLUDE_SCENE_SOURCES)
 
     scene_items = coordinator.data.get("scene_items", {}) if coordinator.data else {}
 
     if selected_scenes:
-        scene_items = {
-            scene: items for scene, items in scene_items.items() if scene in selected_scenes
-        }
+        scene_items = {scene: items for scene, items in scene_items.items() if scene in selected_scenes}
 
     if not include_scene_sources:
         scene_items = {
@@ -173,9 +169,7 @@ class OBSSceneItemSwitch(CoordinatorEntity[OBSCoordinator], SwitchEntity):
     async def _set(self, enabled: bool) -> None:
         resolved = self._resolve()
         if resolved is None:
-            raise HomeAssistantError(
-                f"Scene item '{self._source_name}' is not present in the current OBS scene."
-            )
+            raise HomeAssistantError(f"Scene item '{self._source_name}' is not present in the current OBS scene.")
         scene, item_id = resolved
         try:
             await self._connection.async_set_scene_item_enabled(scene, item_id, enabled)

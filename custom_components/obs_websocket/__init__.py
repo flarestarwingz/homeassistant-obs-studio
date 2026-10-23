@@ -25,14 +25,12 @@ from .const import (
     PLATFORMS,
 )
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
 def get_device_name(entry: ConfigEntry) -> str:
     """Return the configured friendly device name."""
     return str(entry.options.get(OPTION_DEVICE_NAME, DEFAULT_DEVICE_NAME))
-
 
 
 @dataclass
@@ -146,10 +144,7 @@ class OBSConnection:
 
                 scene_list_resp = self._req_client.get_scene_list()
                 scenes = list(scene_list_resp.scenes) if scene_list_resp else []
-                scene_list = [
-                    s["sceneName"] if isinstance(s, dict) else s.scene_name
-                    for s in scenes
-                ]
+                scene_list = [s["sceneName"] if isinstance(s, dict) else s.scene_name for s in scenes]
 
                 for scene in scenes:
                     name = scene["sceneName"] if isinstance(scene, dict) else scene.scene_name
@@ -211,9 +206,7 @@ class OBSConnection:
 
     async def async_set_scene_item_enabled(self, scene_name: str, item_id: int, enabled: bool) -> None:
         """Enable or disable a scene item."""
-        await self.hass.async_add_executor_job(
-            self._req_client.set_scene_item_enabled, scene_name, item_id, enabled
-        )
+        await self.hass.async_add_executor_job(self._req_client.set_scene_item_enabled, scene_name, item_id, enabled)
 
     async def async_toggle_record(self) -> None:
         """Toggle recording."""

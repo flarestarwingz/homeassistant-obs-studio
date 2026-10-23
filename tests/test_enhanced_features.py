@@ -20,7 +20,12 @@ from .conftest import MOCK_CONFIG, MOCK_HOST, MOCK_PORT
 
 
 def _entities(hass: HomeAssistant):
-    entry = MockConfigEntry(domain=DOMAIN, title=MOCK_HOST, data=MOCK_CONFIG.copy(), unique_id=f"{MOCK_HOST}:{MOCK_PORT}")
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=MOCK_HOST,
+        data=MOCK_CONFIG.copy(),
+        unique_id=f"{MOCK_HOST}:{MOCK_PORT}",
+    )
     coordinator = MagicMock()
     coordinator.hass = hass
     coordinator.connection.host = MOCK_HOST
@@ -30,9 +35,14 @@ def _entities(hass: HomeAssistant):
     coordinator.connection.async_set_scene_item_enabled = AsyncMock()
     coordinator.async_request_refresh = AsyncMock()
     coordinator.data = {
-        "service_settings": SimpleNamespace(stream_service_type="rtmp_common", stream_service_settings={
-            "key": "DO_NOT_EXPOSE", "password": "DO_NOT_EXPOSE", "provider_secret": "DO_NOT_EXPOSE"
-        }),
+        "service_settings": SimpleNamespace(
+            stream_service_type="rtmp_common",
+            stream_service_settings={
+                "key": "DO_NOT_EXPOSE",
+                "password": "DO_NOT_EXPOSE",
+                "provider_secret": "DO_NOT_EXPOSE",
+            },
+        ),
         "recording": False,
         "virtual_cam_active": False,
         "current_program_scene": "Main",
@@ -49,10 +59,13 @@ async def test_stream_service_never_exposes_raw_settings(hass: HomeAssistant) ->
     assert sensor.extra_state_attributes == {}
 
 
-@pytest.mark.parametrize("field,entity,expected", [
-    ("recording", OBSRecordingSensor, "recording"),
-    ("virtual_cam_active", OBSVirtualCamSensor, "active"),
-])
+@pytest.mark.parametrize(
+    "field,entity,expected",
+    [
+        ("recording", OBSRecordingSensor, "recording"),
+        ("virtual_cam_active", OBSVirtualCamSensor, "active"),
+    ],
+)
 async def test_output_state_distinguishes_unknown(hass: HomeAssistant, field, entity, expected) -> None:
     coordinator, entry = _entities(hass)
     sensor = entity(coordinator, entry)
@@ -62,10 +75,13 @@ async def test_output_state_distinguishes_unknown(hass: HomeAssistant, field, en
     assert sensor.native_value == expected
 
 
-@pytest.mark.parametrize("button,method", [
-    (OBSRecordToggleButton, "async_toggle_record"),
-    (OBSVirtualCamToggleButton, "async_toggle_virtual_cam"),
-])
+@pytest.mark.parametrize(
+    "button,method",
+    [
+        (OBSRecordToggleButton, "async_toggle_record"),
+        (OBSVirtualCamToggleButton, "async_toggle_virtual_cam"),
+    ],
+)
 async def test_toggle_buttons_refresh(hass: HomeAssistant, button, method) -> None:
     coordinator, entry = _entities(hass)
     entity = button(coordinator, entry)

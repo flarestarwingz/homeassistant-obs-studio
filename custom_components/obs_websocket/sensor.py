@@ -12,7 +12,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import get_device_name, OBSConfigEntry, OBSCoordinator
+from . import OBSConfigEntry, OBSCoordinator, get_device_name
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)

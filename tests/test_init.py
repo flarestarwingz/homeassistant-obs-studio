@@ -332,10 +332,7 @@ async def test_stream_state_changed_callback_is_registered(hass: HomeAssistant) 
         connection = entry.runtime_data.connection
         register = connection._event_client.callback.register
         assert register.call_count == 8
-        callback_names = {
-            call.args[0].__name__
-            for call in register.call_args_list
-        }
+        callback_names = {call.args[0].__name__ for call in register.call_args_list}
         assert callback_names == {
             "on_stream_state_changed",
             "on_current_program_scene_changed",
@@ -348,9 +345,7 @@ async def test_stream_state_changed_callback_is_registered(hass: HomeAssistant) 
         }
 
         stream_callback = next(
-            call.args[0]
-            for call in register.call_args_list
-            if call.args[0].__name__ == "on_stream_state_changed"
+            call.args[0] for call in register.call_args_list if call.args[0].__name__ == "on_stream_state_changed"
         )
 
         with patch.object(connection, "_on_event") as on_event:

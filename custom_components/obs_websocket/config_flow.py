@@ -13,8 +13,8 @@ from homeassistant.helpers import selector
 from .const import (
     DEFAULT_DEVICE_NAME,
     DEFAULT_HOST,
-    DEFAULT_PORT,
     DEFAULT_INCLUDE_SCENE_SOURCES,
+    DEFAULT_PORT,
     DEFAULT_SCENE_ITEM_MODE,
     DOMAIN,
     OPTION_DEVICE_NAME,
@@ -52,10 +52,7 @@ async def _get_scene_names(hass: HomeAssistant, host: str, port: int, password: 
         client = obs.ReqClient(**kwargs)
         try:
             resp = client.get_scene_list()
-            return [
-                s["sceneName"] if isinstance(s, dict) else s.scene_name
-                for s in (resp.scenes or [])
-            ]
+            return [s["sceneName"] if isinstance(s, dict) else s.scene_name for s in (resp.scenes or [])]
         finally:
             client.disconnect()
 
@@ -194,15 +191,9 @@ class OBSWebSocketOptionsFlow(config_entries.OptionsFlow):
         """Handle the options step."""
         if user_input is not None:
             data = {
-                OPTION_DEVICE_NAME: user_input.get(
-                    self._FIELD_DEVICE_NAME, DEFAULT_DEVICE_NAME
-                ),
-                OPTION_SCENE_ITEM_MODE: user_input.get(
-                    self._FIELD_SCENE_ITEM_MODE, DEFAULT_SCENE_ITEM_MODE
-                ),
-                OPTION_SCENE_ITEM_SCENES: user_input.get(
-                    self._FIELD_SCENE_ITEM_SCENES, []
-                ),
+                OPTION_DEVICE_NAME: user_input.get(self._FIELD_DEVICE_NAME, DEFAULT_DEVICE_NAME),
+                OPTION_SCENE_ITEM_MODE: user_input.get(self._FIELD_SCENE_ITEM_MODE, DEFAULT_SCENE_ITEM_MODE),
+                OPTION_SCENE_ITEM_SCENES: user_input.get(self._FIELD_SCENE_ITEM_SCENES, []),
                 OPTION_INCLUDE_SCENE_SOURCES: user_input.get(
                     self._FIELD_INCLUDE_SCENE_SOURCES, DEFAULT_INCLUDE_SCENE_SOURCES
                 ),
@@ -235,15 +226,11 @@ class OBSWebSocketOptionsFlow(config_entries.OptionsFlow):
                 {
                     vol.Optional(
                         self._FIELD_DEVICE_NAME,
-                        default=self.config_entry.options.get(
-                            OPTION_DEVICE_NAME, DEFAULT_DEVICE_NAME
-                        ),
+                        default=self.config_entry.options.get(OPTION_DEVICE_NAME, DEFAULT_DEVICE_NAME),
                     ): str,
                     vol.Optional(
                         self._FIELD_SCENE_ITEM_MODE,
-                        default=self.config_entry.options.get(
-                            OPTION_SCENE_ITEM_MODE, DEFAULT_SCENE_ITEM_MODE
-                        ),
+                        default=self.config_entry.options.get(OPTION_SCENE_ITEM_MODE, DEFAULT_SCENE_ITEM_MODE),
                     ): selector.SelectSelector(
                         selector.SelectSelectorConfig(
                             options=[
