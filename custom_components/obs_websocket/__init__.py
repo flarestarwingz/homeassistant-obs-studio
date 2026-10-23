@@ -26,6 +26,9 @@ from .const import (
 )
 
 
+_LOGGER = logging.getLogger(__name__)
+
+
 def get_device_name(entry: ConfigEntry) -> str:
     """Return the configured friendly device name."""
     return str(entry.options.get(OPTION_DEVICE_NAME, DEFAULT_DEVICE_NAME))
@@ -82,24 +85,39 @@ class OBSConnection:
                 def on_stream_state_changed(self_: Any, data: Any) -> None:
                     conn._on_event()
 
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.debounce import Debouncer
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+                def on_current_program_scene_changed(self_: Any, data: Any) -> None:
+                    conn._on_event()
 
-from .const import (
-    DEFAULT_DEVICE_NAME,
-    DOMAIN,
-    EVENT_REFRESH_COOLDOWN,
-    HEARTBEAT_INTERVAL,
-    OPTION_DEVICE_NAME,
-    PLATFORMS,
-)
+                def on_scene_item_enable_state_changed(self_: Any, data: Any) -> None:
+                    conn._on_event()
 
+                def on_scene_item_created(self_: Any, data: Any) -> None:
+                    conn._on_event()
 
-def get_device_name(entry: ConfigEntry) -> str:
-    """Return the configured friendly device name."""
-    return str(entry.options.get(OPTION_DEVICE_NAME, DEFAULT_DEVICE_NAME))
+                def on_scene_item_removed(self_: Any, data: Any) -> None:
+                    conn._on_event()
 
+                def on_scene_list_changed(self_: Any, data: Any) -> None:
+                    conn._on_event()
+
+                def on_record_state_changed(self_: Any, data: Any) -> None:
+                    conn._on_event()
+
+                def on_virtualcam_state_changed(self_: Any, data: Any) -> None:
+                    conn._on_event()
+
+            events = _Events(**conn._get_kwargs())
+
+            events.callback.register(events.on_stream_state_changed)
+            events.callback.register(events.on_current_program_scene_changed)
+            events.callback.register(events.on_scene_item_enable_state_changed)
+            events.callback.register(events.on_scene_item_created)
+            events.callback.register(events.on_scene_item_removed)
+            events.callback.register(events.on_scene_list_changed)
+            events.callback.register(events.on_record_state_changed)
+            events.callback.register(events.on_virtualcam_state_changed)
+
+            conn._event_client = events
 
         await self.hass.async_add_executor_job(_connect)
 

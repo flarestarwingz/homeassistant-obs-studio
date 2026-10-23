@@ -20,7 +20,6 @@ from .const import (
     OPTION_SCENE_ITEM_MODE,
     OPTION_SCENE_ITEM_SCENES,
     SCENE_ITEM_MODE_ALL,
-    SCENE_ITEM_MODE_SOURCES,
 )
 
 _LOGGER = logging.getLogger(__name__)
