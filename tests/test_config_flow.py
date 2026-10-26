@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -13,6 +14,28 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.obs_websocket.const import DOMAIN
 
 from .conftest import MOCK_CONFIG, MOCK_HOST, MOCK_NEW_PASSWORD, MOCK_PASSWORD, MOCK_PORT, MOCK_WRONG_PASSWORD
+
+
+@pytest.fixture(autouse=True)
+def mock_entry_lifecycle():
+    """Prevent config-flow tests from opening real OBS connections.
+
+    A successful config flow creates or reloads a config entry.
+    These tests verify the flow, not the integration's WebSocket lifecycle.
+    """
+    with (
+        patch(
+            "custom_components.obs_websocket.async_setup_entry",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
+        patch(
+            "custom_components.obs_websocket.async_unload_entry",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
+    ):
+        yield
 
 
 async def test_user_flow_shows_form(hass: HomeAssistant) -> None:

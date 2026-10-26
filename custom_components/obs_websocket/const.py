@@ -15,6 +15,7 @@ HEARTBEAT_INTERVAL: Final = 60
 EVENT_REFRESH_COOLDOWN: Final = 0.5
 
 PLATFORMS: Final[list[str]] = [
+    "binary_sensor",
     "button",
     "sensor",
     "select",
