@@ -39,9 +39,9 @@ class OBSPerformanceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Run on HA's executor. Keep statistics requests off the main OBS client."""
         import obsws_python as obs
 
-        if self._client is None:
-            self._client = obs.ReqClient(**self.connection._get_kwargs())
         try:
+            if self._client is None:
+                self._client = obs.ReqClient(**self.connection._get_kwargs())
             stats = self._client.get_stats()
         except Exception:
             self._disconnect()

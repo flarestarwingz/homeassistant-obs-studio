@@ -28,6 +28,11 @@ from .performance import OBSPerformanceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+# obsws-python logs OBS connection parameters (including the password) at INFO.
+# Keep those messages out of Home Assistant logs, including debug sessions.
+logging.getLogger("obsws_python.baseclient.ObsClient").setLevel(logging.WARNING)
+logging.getLogger("obsws_python.baseclient").setLevel(logging.WARNING)
+
 
 def get_device_name(entry: ConfigEntry) -> str:
     """Return the configured friendly device name."""
