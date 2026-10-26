@@ -44,6 +44,14 @@ class OBSPerformanceSensor(_OBSPerformanceBase, SensorEntity):
     ) -> None:
         super().__init__(coordinator, entry, key, name)
         self._attr_native_unit_of_measurement = unit
+        self._attr_suggested_display_precision = {
+            "active_fps": 2,
+            "average_frame_render_time": 2,
+            "cpu_usage": 1,
+            "memory_usage": 1,
+            "render_lag_percent": 2,
+            "encode_lag_percent": 2,
+        }.get(key, 0)
 
     @property
     def native_value(self) -> float | int | None:
