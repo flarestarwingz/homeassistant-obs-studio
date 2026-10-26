@@ -85,7 +85,13 @@ async def test_failed_request_disconnects_and_reconnects_client(hass: HomeAssist
     bad_client.get_stats.side_effect = ConnectionError("disconnect")
     good_client = MagicMock()
     good_client.get_stats.return_value = MagicMock(**sample(0, 100, 0, 0))
-    with patch("obsws_python.ReqClient", side_effect=[bad_client, good_client]) as factory:
+    with (
+        patch.dict(
+            "sys.modules",
+            {"obsws_python": MagicMock(ReqClient=MagicMock(side_effect=[bad_client, good_client]))},
+        ),
+    ):
+        factory = __import__("obsws_python").ReqClient
         with pytest.raises(UpdateFailed, match="OBS GetStats unavailable"):
             await collector._async_update_data()
         assert collector._client is None
