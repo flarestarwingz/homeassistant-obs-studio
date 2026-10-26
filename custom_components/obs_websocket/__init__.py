@@ -24,6 +24,7 @@ from .const import (
     OPTION_DEVICE_NAME,
     PLATFORMS,
 )
+from .performance import OBSPerformanceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class OBSRuntimeData:
 
     connection: OBSConnection
     coordinator: OBSCoordinator
+    performance: OBSPerformanceCoordinator | None = None
 
 
 type OBSConfigEntry = ConfigEntry[OBSRuntimeData]
@@ -305,6 +307,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: OBSConfigEntry) -> bool:
         coordinator=coordinator,
     )
 
+    performance = OBSPerformanceCoordinator(hass, connection)
+    entry.runtime_data.performance = performance
+    # Non-fatal: unsupported/unavailable GetStats must not disable OBS controls.
+    await performance.async_refresh()
+
     _migrate_device_name(hass, entry)
 
     entry.async_on_unload(entry.add_update_listener(async_options_updated))
@@ -339,6 +346,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: OBSConfigEntry) -> bool
         connection = entry.runtime_data.connection
         # Stop late OBS events from triggering a refresh that would reconnect.
         connection.coordinator = None
+        performance = entry.runtime_data.performance
+        if performance is not None:
+            await performance.async_shutdown()
         await entry.runtime_data.coordinator.async_shutdown()
         await connection.async_disconnect()
     return unload_ok

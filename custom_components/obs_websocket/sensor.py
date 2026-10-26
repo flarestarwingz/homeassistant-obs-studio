@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import OBSConfigEntry, OBSCoordinator, get_device_name
 from .const import DOMAIN
+from .performance_sensor import create_sensors
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +26,9 @@ async def async_setup_entry(  # NOSONAR
 ) -> None:
     """Set up OBS WebSocket sensors from a config entry."""
     coordinator = entry.runtime_data.coordinator
+    performance = getattr(entry.runtime_data, "performance", None)
+    if performance is not None:
+        async_add_entities(create_sensors(performance, entry))
 
     async_add_entities(
         [
