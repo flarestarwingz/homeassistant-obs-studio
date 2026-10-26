@@ -116,10 +116,15 @@ class OBSPerformanceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     misses[miss_key] = delta_skipped
         self._previous = current
 
-        valid = all(value is not None for value in rates.values())
+        # Rendering and encoding are independent. OBS can render frames
+        # while streaming and recording outputs are both inactive.
+        valid = any(value is not None for value in rates.values())
         if valid:
             bad = any(
-                rates[name] > WARNING_PERCENT and misses[miss] >= WARNING_MIN_FRAMES
+                rates[name] is not None
+                and misses[miss] is not None
+                and rates[name] > WARNING_PERCENT
+                and misses[miss] >= WARNING_MIN_FRAMES
                 for name, miss in (
                     ("render_lag_percent", "render_misses"),
                     ("encode_lag_percent", "encode_misses"),
